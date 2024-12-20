@@ -1,0 +1,147 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2012                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      controlDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+application     simpleEnergyFoam;
+
+startFrom       startTime;
+
+startTime       0;
+
+stopAt          endTime;
+
+endTime         20;
+
+deltaT          1e-2;
+
+writeControl    runTime;
+
+writeInterval   0.5;
+
+purgeWrite      0;
+
+writeFormat     binary;
+
+writePrecision  6;
+
+writeCompression off;
+
+timeFormat      general;
+
+timePrecision   6;
+
+runTimeModifiable true;
+
+adjustTimeStep true;
+
+maxCo   5;
+
+functions
+{
+    velocityProbe
+    {
+        type probes;
+        libs ("libsampling.so");
+        probeLocations ((0.5 0.5 1.5));
+        fields (U);
+        writeControl timeStep;
+        writeInterval 1;
+    }
+
+    lines{
+        type sets;
+        enabled true;
+        verbose true;
+        interpolationScheme cellPointFace;
+        outputControl timeStep;
+        setFormat raw;
+        fields (U p); //insert the fields you would like to sample
+        sets
+        (
+
+        L1
+            {
+            type uniform;
+            axis distance;
+            start (0 0.06 -0.1);
+            end   (0 0.06 0.03);
+            nPoints 100000;
+            };
+
+        
+        );  
+    };
+
+    cutPlanes
+    {
+        type            surfaces;
+	    libs            ("libsampling.so");
+	
+		writeControl	timeStep;
+		writeInterval	1;
+
+		surfaceFormat   vtp;
+	    
+	    fields			(U p);
+
+	    interpolationScheme cellPoint;
+
+        surfaces
+        (
+            verticalPlane
+            {
+                type		cuttingPlane;
+                planeType	pointAndNormal;
+                pointAndNormalDict
+                {
+                    point   (0 0 0);
+                    normal  (0 0 1);
+                }
+                interpolate false;
+            }
+        );
+    };
+
+    temporalStatistics
+    {
+        type fieldAverage;
+ 		libs ("libfieldFunctionObjects.so");
+
+		writeControl    	adjustableRunTime;
+        writeInterval   	0.1;
+
+		timeStart			0.1;
+		restartOnRestart    true;
+     
+		fields
+        (
+            p
+            {
+                mean            false;
+                prime2Mean      false;
+                base            time;
+            }
+            U
+            {
+                mean            false;
+                prime2Mean      false;
+                base            time;
+            }
+    };
+
+}
+
+
+// ************************************************************************* //
