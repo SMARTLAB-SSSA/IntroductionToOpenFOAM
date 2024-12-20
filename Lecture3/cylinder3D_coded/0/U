@@ -1,0 +1,69 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2012                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volVectorField;
+    object      U;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+dimensions      [0 1 -1 0 0 0 0];
+
+internalField   uniform (0 0 0);
+
+boundaryField
+{
+    inlet
+    {
+        type            codedFixedValue;
+        value           uniform 0;
+
+        // Name of generated boundary condition
+        redirectType    JET;
+
+        code
+        #{
+            //Let us get the whole mesh:
+          const fvPatch& boundaryPatch=patch(); //generic
+          const vectorField& Cf=boundaryPatch.Cf(); //generic
+          vectorField& field=*this ;//generic
+
+          const scalar r= 10e-3;
+          const scalar U_max= 3.1831927423205473/0.753 ;//(QTOT)/(gSum(this-> patch().magSf()));
+
+            forAll(Cf,faceI) //loop over all patch faces
+            {
+                const scalar x=Cf[faceI].x();
+                const scalar y=Cf[faceI].y();
+                const scalar z=Cf[faceI].z();
+                const scalar rad=pow(z*z + x*x, 0.5);
+                field[faceI]=vector(0, U_max*pow(1-rad/r,1/4.885) ,0 );
+            }
+            #}; 
+    }
+
+    sides
+    {
+        type            zeroGradient;
+    }
+
+    square
+    {
+        type            noSlip;
+    }
+
+    outlet
+    {
+        type zeroGradient;
+    }
+    
+}
+
+// ************************************************************************* //
